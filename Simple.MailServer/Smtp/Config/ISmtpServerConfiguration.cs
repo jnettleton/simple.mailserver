@@ -29,6 +29,7 @@ namespace Simple.MailServer.Smtp.Config
         string DefaultGreeting { get; set; }
         TimeSpan GlobalConnectionTimeout { get; set; }
         TimeSpan ConnectionIdleTimeout { get; set; }
+        TimeSpan DisconnectIdleTimeout { get; set; }
 
         event Action<ISmtpServerConfiguration> ConfigurationChanged;
     }

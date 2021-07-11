@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 
 namespace Simple.MailServer
 {
-    public class RawLineDecoder
+    public class RawLineDecoder : IDisposable
     {
         private readonly ICanReadLineAsync _readLineSource;
 
@@ -43,6 +43,8 @@ namespace Simple.MailServer
         }
 
         private CancellationTokenSource _cts = new CancellationTokenSource();
+        private bool _disposed = false;
+
         public void Cancel()
         {
             _cts.Cancel();
@@ -51,50 +53,68 @@ namespace Simple.MailServer
         public async Task ProcessCommandsAsync()
         {
             var cancellationToken = _cts.Token;
-            try
+            while (!_cts.IsCancellationRequested)
             {
-                while (!_cts.IsCancellationRequested)
+                byte[] line = null;
+                try
                 {
-                    byte[] line;
-                    try
+                    line = await _readLineSource.ReadLineAsync(cancellationToken);
+                    if (line == null)
                     {
-                        line = await _readLineSource.ReadLineAsync(cancellationToken);
-                        if (line == null)
-                        {
-                            RequestDisconnection(this, RequestDisconnectionEventArgs.Expected);
-                            return;
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        RequestDisconnection(this, RequestDisconnectionEventArgs.Unexpected);
-                        return;
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        return;
-                    }
-                    catch (ObjectDisposedException)
-                    {
+                        RequestDisconnection(this, RequestDisconnectionEventArgs.Expected);
                         return;
                     }
 
                     DetectedActivity(this, EventArgs.Empty);
 
                     line = StringReaderStream.ProcessBackslashes(line);
-
                     ProcessLineCommand(this, new BufferEventArgs(line));
                 }
+                catch (IOException)
+                {
+                    RequestDisconnection(this, RequestDisconnectionEventArgs.Unexpected);
+                    return;
+                }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
             }
-            catch (Exception ex)
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
             {
-                MailServerLogger.Instance.Error(ex);
-                RequestDisconnection(this, RequestDisconnectionEventArgs.Unexpected);
+                if (disposing)
+                {
+                    if (_cts != null)
+                    {
+                        _cts.Cancel();
+                        _cts.Dispose();
+                        _cts = null;
+                    }
+                }
+                _disposed = true;
             }
-            finally
-            {
-                _cts = new CancellationTokenSource();
-            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~RawLineDecoder()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

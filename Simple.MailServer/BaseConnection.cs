@@ -62,6 +62,7 @@ namespace Simple.MailServer
         }
 
         public abstract TimeSpan GetIdleTime();
+        public abstract TimeSpan GetDisconnectIdleTime();
 
         public async Task<byte[]> ReadLineAsync(CancellationToken cancellationToken)
         {
