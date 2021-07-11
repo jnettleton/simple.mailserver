@@ -29,7 +29,7 @@ namespace Simple.MailServer
     [DebuggerDisplay("{Connection}")]
     public class BaseSession : IHaveIdleTimeSpan, ICanDisconnect, IDisposable
     {
-        public bool Active { get; protected set; }
+        public bool Active { get; set; }
         public bool Disconnected { get; protected set; }
 
         public BaseConnection Connection { get; private set; }
@@ -42,6 +42,11 @@ namespace Simple.MailServer
         public TimeSpan GetIdleTime()
         {
             return Stopwatch.Elapsed;
+        }
+
+        public TimeSpan GetDisconnectIdleTime()
+        {
+            return Active ? TimeSpan.Zero : Stopwatch.Elapsed;
         }
 
         internal BaseSession(BaseConnection connection)

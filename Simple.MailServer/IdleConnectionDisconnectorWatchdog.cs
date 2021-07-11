@@ -33,6 +33,7 @@ namespace Simple.MailServer
         public T Server { get; private set; }
 
         public TimeSpan ConnectionTimeout { get; set; }
+        public TimeSpan DisconnectIdleTimeout { get; set; }
         public TimeSpan IdleTimeout { get; set; }
 
         public Func<DateTime> FuncTimeSource = () => DateTime.UtcNow;
@@ -57,6 +58,7 @@ namespace Simple.MailServer
             if (server == null) throw new ArgumentNullException("server");
 
             Server = server;
+            DisconnectIdleTimeout = NoTimeout;
             _interval = 1000;
         }
 
@@ -96,6 +98,7 @@ namespace Simple.MailServer
             var connections = Server.GetConnections().ToList();
 
             var connectionTimeout = ConnectionTimeout;
+            var disconnectIdleTimeout = DisconnectIdleTimeout;
             var idleTimeout = IdleTimeout;
 
             for (var i = connections.Count - 1; i >= 0; i--)
@@ -108,7 +111,12 @@ namespace Simple.MailServer
                     connection.Disconnect();
                     continue;
                 }
-
+                if (disconnectIdleTimeout != NoTimeout && connection.GetDisconnectIdleTime() > disconnectIdleTimeout)
+                {
+                    TerminatingConnection(this, new ClientConnectionEventArgs(connection));
+                    connection.Disconnect();
+                    continue;
+                }
                 if (idleTimeout != NoTimeout && connection.GetIdleTime() > idleTimeout)
                 {
                     TerminatingConnection(this, new ClientConnectionEventArgs(connection));

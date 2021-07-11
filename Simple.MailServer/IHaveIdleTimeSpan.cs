@@ -27,5 +27,6 @@ namespace Simple.MailServer
     public interface IHaveIdleTimeSpan
     {
         TimeSpan GetIdleTime();
+        TimeSpan GetDisconnectIdleTime();
     }
 }

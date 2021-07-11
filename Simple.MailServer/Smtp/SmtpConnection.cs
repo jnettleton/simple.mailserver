@@ -30,6 +30,7 @@ namespace Simple.MailServer.Smtp
     {
         public SmtpSession Session { get; set; }
         public SmtpServer Server { get; set; }
+        public bool Disconnecting { get; set; }
 
         public event EventHandler<SmtpConnectionEventArgs> ClientDisconnected = (s, c) => {};
         public event EventHandler<SmtpSessionEventArgs> SessionCreated = (sender, args) => MailServerLogger.Instance.Debug("Session created for " + args.Session.Connection.RemoteEndPoint);
@@ -40,19 +41,25 @@ namespace Simple.MailServer.Smtp
             return session != null ? session.GetIdleTime() : TimeSpan.Zero;
         }
 
+        public override TimeSpan GetDisconnectIdleTime()
+        {
+            var session = Session;
+            return Disconnecting && session != null ? session.GetDisconnectIdleTime() : TimeSpan.Zero;
+        }
+
         public SmtpConnection(SmtpServer server, PortListener portBinding, TcpClient tcpClient)
             : base(portBinding, tcpClient)
         {
             if (server == null) throw new ArgumentNullException("server");
 
             Server = server;
+            Disconnecting = false;
         }
 
         public SmtpSession CreateSession(ISmtpResponderFactory responderFactory)
         {
             var session = new SmtpSession(this, responderFactory);
-            session.OnSessionDisconnected +=
-                (sender, args) => ClientDisconnected(this, new SmtpConnectionEventArgs(this));
+            session.OnSessionDisconnected += (sender, args) => ClientDisconnected(this, new SmtpConnectionEventArgs(this));
             Session = session;
 
             SessionCreated(this, new SmtpSessionEventArgs(Session));

@@ -33,7 +33,14 @@ namespace Simple.MailServer.Smtp.Config
         public string DefaultGreeting
         {
             get { return _defaultGreeting; }
-            set { _defaultGreeting = value; FireConfigurationChanged(); }
+            set
+            {
+                if (_defaultGreeting != value)
+                {
+                    _defaultGreeting = value;
+                    FireConfigurationChanged();
+                }
+            }
         }
 
         private TimeSpan _globalConnectionTimeout = TimeSpan.FromMinutes(10);
@@ -57,6 +64,24 @@ namespace Simple.MailServer.Smtp.Config
             set { _connectionIdleTimeout = value; FireConfigurationChanged(); }
         }
 
+        private TimeSpan _disconnectIdleTimeout = TimeSpan.FromSeconds(2);
+
+        /// <summary>
+        /// Maximum time for an idle connection session before being disconnected
+        /// </summary>
+        public TimeSpan DisconnectIdleTimeout
+        {
+            get { return _disconnectIdleTimeout; }
+            set
+            {
+                if (_disconnectIdleTimeout != value)
+                {
+                    _disconnectIdleTimeout = value;
+                    FireConfigurationChanged();
+                }
+            }
+        }
+
         private long _maxMailMessageSize = 20 * 1024 * 1024;
 
         /// <summary>
@@ -65,7 +90,14 @@ namespace Simple.MailServer.Smtp.Config
         public long MaxMailMessageSize
         {
             get { return _maxMailMessageSize; }
-            set { _maxMailMessageSize = value; FireConfigurationChanged(); }
+            set
+            {
+                if (_maxMailMessageSize != value)
+                {
+                    _maxMailMessageSize = value;
+                    FireConfigurationChanged();
+                }
+            }
         }
 
         private long _maxNumberOfRecipients = 100;
@@ -75,7 +107,14 @@ namespace Simple.MailServer.Smtp.Config
         public long MaxNumberOfRecipients
         {
             get { return _maxNumberOfRecipients; }
-            set { _maxNumberOfRecipients = value; FireConfigurationChanged(); }
+            set
+            {
+                if (_maxNumberOfRecipients != value)
+                {
+                    _maxNumberOfRecipients = value;
+                    FireConfigurationChanged();
+                }
+            }
         }
 
         public event Action<ISmtpServerConfiguration> ConfigurationChanged = c => { };

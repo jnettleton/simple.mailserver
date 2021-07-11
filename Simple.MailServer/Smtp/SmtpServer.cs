@@ -84,6 +84,7 @@ namespace Simple.MailServer.Smtp
                 c =>
                 {
                     Watchdog.ConnectionTimeout = c.GlobalConnectionTimeout;
+                    Watchdog.DisconnectIdleTimeout = c.DisconnectIdleTimeout;
                     Watchdog.IdleTimeout = c.ConnectionIdleTimeout;
                 };
         }
@@ -192,7 +193,8 @@ namespace Simple.MailServer.Smtp
             try
             {
                 await CreateSessionAndProcessCommands(connection);
-            } catch(Exception ex)
+            }
+            catch(Exception ex)
             {
                 MailServerLogger.Instance.Error(ex);
             }
@@ -214,10 +216,11 @@ namespace Simple.MailServer.Smtp
             rawLineDecoder.RequestDisconnection += (s, e) =>
             {
                 if (!e.DisconnectionExpected)
-                {
                     MailServerLogger.Instance.Warn(String.Format("Connection unexpectedly lost {0}", connection.RemoteEndPoint));
-                }
+                else
+                    MailServerLogger.Instance.Warn(String.Format("Remote connection closed {0}", connection.RemoteEndPoint));
 
+                connection.Disconnecting = true;
                 rawLineDecoder.Cancel();
                 session.Disconnect();
             };
@@ -229,20 +232,15 @@ namespace Simple.MailServer.Smtp
 
                 if (response.ResponseCode == SmtpResponses.DisconnectResponseCode)
                 {
-                    await SendResponseAsync(connection, response);
-
                     MailServerLogger.Instance.Debug(String.Format("Remote connection disconnected {0}", connection.RemoteEndPoint));
-                    rawLineDecoder.Cancel();
-                    await Task.Delay(100).ContinueWith(t => session.Disconnect());
-                    return;
+
+                    connection.Disconnecting = true;
                 }
 
                 await SendResponseAsync(connection, response);
             };
 
-#pragma warning disable 4014
-            rawLineDecoder.ProcessCommandsAsync();
-#pragma warning restore 4014
+            await rawLineDecoder.ProcessCommandsAsync();
         }
 
         private static async Task SendResponseAsync(SmtpConnection connection, SmtpResponse response)
@@ -255,8 +253,8 @@ namespace Simple.MailServer.Smtp
                     await connection.WriteLineAsyncAndFireEvents(additional);
 
                 await connection.WriteLineAsyncAndFireEvents(response.ResponseCode + " " + response.ResponseText);
-
-            } catch(Exception ex)
+            }
+            catch(Exception ex)
             {
                 MailServerLogger.Instance.Error(ex);
             }
