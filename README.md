@@ -2,6 +2,18 @@
 
 Simple SMTP Mail Server in C# 5 (using async features)
 
+**Fork of [hanswolff/simple.mailserver](https://github.com/hanswolff/simple.mailserver)**, which its author marked discontinued and which is now archived (last upstream commit August 2017).
+
+Changed in July 2021 to address a server that kept waiting on connections whose clients had gone away. Changes:
+
+- The command read loop is awaited instead of fire-and-forget.
+- The 100 ms delayed disconnect after QUIT is replaced by a `Disconnecting` flag.
+- A configurable `DisconnectIdleTimeout` (default 2 s) is enforced by the idle watchdog for connections marked as disconnecting.
+- Dead connections with no FIN are still reaped by the existing `ConnectionIdleTimeout` (default 60 s).
+- The vendored `packages/` folder is removed (use NuGet restore), and the version is bumped to 1.0.0.
+
+No new tests. Not published to NuGet.
+
 ## Installation
 
     PM> Install-Package Simple.MailServer
