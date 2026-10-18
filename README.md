@@ -16,13 +16,13 @@ No new tests. Not published to NuGet.
 
 ## Installation
 
-    PM> Install-Package Simple.MailServer
+    PM> Install-Package Simple.MailServer    (installs the upstream package; build from source for this fork)
 
 ## Supported Features
 
 - basic SMTP protocol (extendible through provided interfaces)
 - multiple port bindings
-- extensively using C# 5 async (for better performance than just threads)
+- extensive use of C# 5 async (for better performance than just threads)
 - certain MIME features for encoding, date parsing (RFC 2822, RFC 5335)
 
 ## Planned Features
